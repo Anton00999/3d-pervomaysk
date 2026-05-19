@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Синагога</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f4e4bc, #e6d5b9);
+            color: #2b1810;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+
+        #viewer-container {
+            position: relative;
+            width: 80vw;
+            height: 80vh;
+            border: 2px solid #8b6b4a;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(59, 43, 31, 0.4);
+            background: linear-gradient(135deg, #f4e4bc, #e6d5b9); /* Фон такий самий, як у body */
+        }
+            
+        model-viewer {
+            width: 100%;
+            height: 100%;
+        }
+
+        h1 {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            color: #46332b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .fullscreen-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 40px;
+            height: 40px;
+            background: url('https://img.icons8.com/ios-glyphs/30/full-screen.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .fullscreen-button img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .fullscreen-button.exit {
+            background: url('https://static-00.iconduck.com/assets.00/fullscreen-exit-icon-512x512-k6kwh7ao.png') no-repeat center center;
+            background-size: contain;
+        }
+
+        .back-button {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 1rem;
+            color: white;
+            background: linear-gradient(45deg, #8b6b4a, #6b4c2d);
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(45deg, #6b4c2d, #8b6b4a);
+        }
+
+        .gallery-preview {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .gallery-preview img {
+            height: 60px;
+            width: auto;
+            border: 2px solid #8b6b4a; 
+            box-shadow: 0 2px 6px rgba(59, 43, 31, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-preview img:nth-child(1) {
+            transform: rotate(8deg);
+        }
+
+        .gallery-preview img:nth-child(2) {
+            transform: rotate(-10deg);
+        }
+
+        .gallery-preview img:nth-child(3) {
+            transform: rotate(10deg);
+        }
+
+        .gallery-preview:hover img:nth-child(1) {
+            transform: rotate(3deg);
+        }
+
+        .gallery-preview:hover img:nth-child(2) {
+            transform: rotate(-5deg);
+        }
+
+        .gallery-preview:hover img:nth-child(3) {
+            transform: rotate(5deg);
+        }
+
+        .gallery-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            max-width: 90%;
+        }
+
+        .gallery img {
+            height: 150px;
+            object-fit: contain;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.1);
+        }
+
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+
+        .fullscreen img {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 1002;
+        }
+
+        .fullscreen-navigation {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            justify-content: space-between;
+            width: 100%;
+            z-index: 1003;
+        }
+
+        .prev-btn,
+        .next-btn {
+            font-size: 3rem;
+            color: white;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            margin: 0 20px;
+            transition: color 0.3s;
+        }
+
+        .prev-btn:hover,
+        .next-btn:hover {
+            color: #d7a65c;
+        }
+
+        .map-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(59, 43, 31, 0.3);
+            border: 2px solid #8b6b4a;
+            z-index: 100;
+            background-color: #f4e4bc;
+            padding: 3px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .map-container.expanded {
+            width: 430px;
+            height: 300px;
+        }
+
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        .map-container.expanded iframe {
+            pointer-events: auto;
+        }
+
+        .compare-btn {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                padding: 8px 15px;
+                background: linear-gradient(45deg, #8b6b4a, #6b4c2d);
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                display: none;
+                z-index: 1005;
+                font-family: Arial, sans-serif;
+            }
+
+            .compare-btn:hover {
+                background: linear-gradient(45deg, #6b4c2d, #8b6b4a);
+            }
+
+            .comparison-mode {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: none;
+                z-index: 1006;
+                background: white;
+            }
+
+            .comparison-container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                overflow: hidden;
+            }
+
+            .model-side, .photo-side {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                transform: translateX(-50%);
+            }
+
+            .model-side {
+                width: 100%;
+                height: 100%;
+            }
+
+            .photo-side {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .divider {
+                position: absolute;
+                width: 4px;
+                height: 100%;
+                background: #8b6b4a;
+                left: 50%;
+                transform: translateX(-50%);
+                cursor: ew-resize;
+                z-index: 1007;
+            }
+
+            .divider::after {
+                content: '';
+                position: absolute;
+                width: 40px;
+                height: 40px;
+                background: #8b6b4a;
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .divider::before {
+                content: '↔';
+                position: absolute;
+                color: white;
+                font-size: 20px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1;
+            }
+
+            .exit-comparison {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 8px 15px;
+                background: rgba(139, 107, 74, 0.8);
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                z-index: 1008;
+            }
+
+        @media (max-width: 768px) {
+            .map-container {
+                width: 50px; 
+                height: 50px; 
+                top: 5px; 
+                right: 5px; 
+            }
+
+            .map-container.expanded {
+                width: 230px; 
+                height: 170px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gallery-preview {
+                display: block;
+            }
+
+            .gallery-preview img {
+                margin: 0 auto;
+                height: 80px; /* Можна налаштувати висоту, якщо потрібно */
+            }
+
+            .gallery-preview img:nth-child(n+2) {
+                display: none; /* Ховаємо друге і третє зображення */
+            }
+        }
+         @media (max-width: 768px) {
+            h1 {
+                font-size: 1.2rem;  /* Зменшуємо розмір шрифта */
+                padding: 0 10px;    /* Додаємо відступи по боках */
+                text-align: center; /* Центруємо текст */
+                white-space: nowrap; /* Забороняємо перенос тексту */
+                overflow: hidden;    /* Приховуємо текст, що виходить за межі */
+                text-overflow: ellipsis; /* Додаємо многоточие, якщо текст занадто довгий */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Синагога</h1>
+    <div id="viewer-container">
+        <model-viewer 
+            id="model-viewer"
+            src="sinagogue.glb" 
+            alt="3D Model" 
+            auto-rotate 
+            camera-controls
+            max-camera-orbit="auto 90deg">
+        </model-viewer>
+        <button class="fullscreen-button" id="fullscreen-button"></button>
+    </div>
+    <a href="index.html" class="back-button">Повернутися</a>
+    
+    <div class="gallery-preview">
+        <img src="sinagogue.jpg" alt="Фото 1">
+    </div>
+
+    <div class="gallery-overlay">
+        <div class="close">&times;</div>
+        <div class="gallery">
+            <img src="sinagogue.jpg" alt="Фото 1">
+        </div>
+    </div>
+
+    <div class="fullscreen">
+        <div class="close">&times;</div>
+        <img src="" alt="Full Image">
+    </div>
+
+    <div class="fullscreen-navigation">
+        <button class="prev-btn">&lt;</button>
+        <button class="next-btn">&gt;</button>
+    </div>
+
+    <button class="compare-btn">Порівняти з моделлю</button>
+
+    <div class="comparison-mode">
+        <div class="comparison-container">
+            <div class="model-side">
+                <model-viewer src="church.glb" alt="3D Model" camera-controls></model-viewer>
+            </div>
+            <div class="photo-side">
+                <img src="" alt="Photo for comparison" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="divider"></div>
+        </div>
+        <button class="exit-comparison">✕ Вийти з режиму порівняння</button>
+    </div>
+
+    <script>
+        const galleryPreview = document.querySelector('.gallery-preview');
+        const galleryOverlay = document.querySelector('.gallery-overlay');
+        const closeButtons = document.querySelectorAll('.close');
+        const images = document.querySelectorAll('.gallery img');
+        const fullscreen = document.querySelector('.fullscreen');
+        const fullscreenImg = fullscreen.querySelector('img');
+        const fullscreenNavigation = document.querySelector('.fullscreen-navigation');
+        const prevButton = document.querySelector('.prev-btn');
+        const nextButton = document.querySelector('.next-btn');
+
+        let currentIndex = 0;
+
+        galleryPreview.addEventListener('click', () => {
+            galleryOverlay.style.display = 'flex';
+        });
+
+        const viewerContainer = document.querySelector('#viewer-container');
+        const fullscreenButton = document.querySelector('#fullscreen-button');
+
+        fullscreenButton.addEventListener('click', () => {
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.msFullscreenElement) {
+                // Входимо в повноекранний режим
+                if (viewerContainer.requestFullscreen) {
+                    viewerContainer.requestFullscreen();
+                } else if (viewerContainer.webkitRequestFullscreen) {
+                    viewerContainer.webkitRequestFullscreen();
+                } else if (viewerContainer.msRequestFullscreen) {
+                    viewerContainer.msRequestFullscreen();
+                } else {
+                    alert('Fullscreen API не підтримується вашим браузером.');
+                }
+            } else {
+                // Виходимо з повноекранного режиму
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        });
+
+        document.addEventListener('fullscreenchange', updateFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        document.addEventListener('msfullscreenchange', updateFullscreenButton);
+
+        function updateFullscreenButton() {
+            if (document.fullscreenElement || 
+                document.webkitFullscreenElement || 
+                document.msFullscreenElement) {
+                fullscreenButton.classList.add('exit');
+            } else {
+                fullscreenButton.classList.remove('exit');
+            }
+        }
+
+        const photoConfigs = {
+            'church1.jpg': {
+                cameraOrbit: '270deg 90deg 70m',
+                cameraTarget: '0m 0m 0m',
+                fieldOfView: '50deg'
+            },
+            'church2.jpg': {
+                cameraOrbit: '90deg 90deg 2m',
+                cameraTarget: '-20m 0m 0m',
+                fieldOfView: '50deg'
+            },
+            'church3.jpg': {
+                cameraOrbit: '90deg 90deg 1m',
+                cameraTarget: '0m 0m 0m',
+                fieldOfView: '50deg'
+            }
+        };
+        const compareBtn = document.querySelector('.compare-btn');
+        const comparisonMode = document.querySelector('.comparison-mode');
+        const divider = document.querySelector('.divider');
+        const comparisonContainer = document.querySelector('.comparison-container');
+        const modelSide = document.querySelector('.model-side');
+        const photoSide = document.querySelector('.photo-side');
+        const exitButton = document.querySelector('.exit-comparison');
+        const comparisonModelViewer = document.querySelector('.model-side model-viewer');
+        const photoSideImg = document.querySelector('.photo-side img');
+
+        // Модифікуємо існуючий обробник кліку по зображенню в галереї
+        images.forEach((image, index) => {
+            image.addEventListener('click', () => {
+                fullscreenImg.src = image.src;
+                fullscreen.style.display = 'flex';
+                fullscreenNavigation.style.display = 'flex';
+                compareBtn.style.display = 'block'; // Показуємо кнопку порівняння
+                currentIndex = index;
+            });
+        });
+
+        // Модифікуємо існуючий обробник закриття повноекранного режиму
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                galleryOverlay.style.display = 'none';
+                fullscreen.style.display = 'none';
+                fullscreenNavigation.style.display = 'none';
+                compareBtn.style.display = 'none'; // Ховаємо кнопку порівняння
+            });
+        });
+
+        // Додаємо обробник кліку поза зображенням
+        fullscreen.addEventListener('click', (event) => {
+            if (event.target === fullscreen) {
+                fullscreen.style.display = 'none';
+                fullscreenNavigation.style.display = 'none';
+                compareBtn.style.display = 'none'; // Ховаємо кнопку порівняння
+            }
+        });
+
+        // Обробка перетягування роздільника
+        let isDragging = false;
+
+        divider.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const containerRect = comparisonContainer.getBoundingClientRect();
+            const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+
+            if (percentage >= 10 && percentage <= 90) {
+                photoSide.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;  // Обрізаємо фотографію з правої частини
+                divider.style.left = `${percentage}%`;  // Переміщаємо слайдер по відсотках
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Функція для активації режиму порівняння
+        compareBtn.addEventListener('click', () => {
+            modelSide.style.width = '100%';
+            photoSide.style.width = '100%';
+            divider.style.left = '50%';
+            
+            const currentPhoto = fullscreenImg.src.split('/').pop();
+            const config = photoConfigs[currentPhoto];
+
+            if (config) {
+                comparisonModelViewer.setAttribute('camera-orbit', config.cameraOrbit);
+                comparisonModelViewer.setAttribute('camera-target', config.cameraTarget);
+                comparisonModelViewer.setAttribute('field-of-view', config.fieldOfView);
+            }
+
+            // Очистити попереднє обрізання
+            photoSide.style.clipPath = 'none';
+
+            // Завантажити нове зображення
+            photoSideImg.src = fullscreenImg.src;
+
+            // Переконатись, що нове зображення завантажилось, перед застосуванням обрізання
+            photoSideImg.onload = () => {
+                // Застосовуємо обрізання після завантаження фотографії
+                photoSide.style.clipPath = `inset(0 0 0 ${sliderPosition}px)`;
+            };
+
+            fullscreen.style.display = 'none';
+            fullscreenNavigation.style.display = 'none';
+            comparisonMode.style.display = 'block';
+        });
+
+        // Вихід з режиму порівняння
+        exitButton.addEventListener('click', () => {
+            comparisonMode.style.display = 'none';
+            modelSide.style.width = '50%';
+            photoSide.style.width = '50%';
+            divider.style.left = '50%';
+        });
+
+        
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                galleryOverlay.style.display = 'none';
+                fullscreen.style.display = 'none';
+                fullscreenNavigation.style.display = 'none';
+            });
+        });
+
+        images.forEach((image, index) => {
+            image.addEventListener('click', () => {
+                fullscreenImg.src = image.src;
+                fullscreen.style.display = 'flex';
+                fullscreenNavigation.style.display = 'flex';
+                currentIndex = index;
+            });
+        });
+
+        prevButton.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            fullscreenImg.src = images[currentIndex].src;
+        });
+
+        nextButton.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % images.length;
+            fullscreenImg.src = images[currentIndex].src;
+        });
+
+        fullscreen.addEventListener('click', (event) => {
+            if (event.target === fullscreen) {
+                fullscreen.style.display = 'none';
+                fullscreenNavigation.style.display = 'none';
+            }
+        });
+        
+                document.addEventListener('DOMContentLoaded', () => {
+            const mapContainer = document.querySelector('.map-container');
+            const body = document.querySelector('body');
+            
+            // Обробник події для натискання на карту
+            if (mapContainer) {
+                mapContainer.addEventListener('click', (event) => {
+                    event.stopPropagation(); // Запобігає пропагуванню події на body
+                    mapContainer.classList.toggle('expanded');
+                });
+            }
+            
+            // Обробник події для натискання поза картою
+            body.addEventListener('click', () => {
+                if (mapContainer.classList.contains('expanded')) {
+                    mapContainer.classList.remove('expanded');
+                }
+            });
+        });
+
+    </script>
+    <div class="map-container">
+        <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d930.0406782938608!2d30.849275242784472!3d48.04497571570169!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNDjCsDAyJzQyLjMiTiAzMMKwNTAnNTguMCJF!5e1!3m2!1suk!2sua!4v1737043933202!5m2!1suk!2sua"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+    </div>
+</body>
+</html>
